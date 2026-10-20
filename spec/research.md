@@ -12,24 +12,64 @@ post cites — measured, never estimated.
 | `tabpfn==9.2.0` install | **235 s** |
 | venv size (`python/.venv`, torch + tabpfn + deps) | **1.4 GB** |
 | `import tabpfn` | ✅ tabpfn 9.2.0 |
-| TabPFN-3.5 checkpoint download | 🔑 **PENDING-TOKEN** — no `TABPFN_TOKEN` in Doppler muse/dev (checked Oct 20; signup in flight) |
+| TabPFN-3.5 checkpoint download | ✅ **876 MB** (`tabpfn-v3.5-20260909.safetensors`, in `~/.cache/tabpfn`) — one-time, token-gated; fully offline after |
 | V3.5 fit without token | Blocked exactly as documented: `TabPFNLicenseError` — accept the license on the Licenses tab at ux.priorlabs.ai, copy the API key from /account, set `TABPFN_TOKEN` |
-| Stand-in timing (TabPFN **V2** checkpoint, 200 pooled rows, DESIGN §3 shape) | **fit+predict 115.1 s**, peak RSS **585 MB** |
+| **V3.5 timing (200 pooled rows, DESIGN §3 shape, token set)** | **fit+predict 38.7 s**, peak RSS **3,933 MB** (first-ever fit incl. checkpoint download/load: 677.1 s — download-dominated, proxy-shared) |
+| Stand-in timing (TabPFN **V2** checkpoint, same 200 rows) | fit+predict 115.1 s, peak RSS 585 MB |
 | V2 checkpoint size (in `~/.cache/tabpfn`) | 44 MB (`tabpfn-v2-regressor.ckpt`) |
 
-Kill-criterion check: install worked through the VM proxy; stand-in
-200-row fit+predict is ~5× inside the ~10 min ceiling. **No kill.**
-The V3.5 timing leg runs the moment `TABPFN_TOKEN` exists (S9/S10 are
-marked 🔑 for exactly this).
+Kill-criterion check: install worked through the VM proxy; V3.5
+200-row fit+predict (38.7 s) is ~15× inside the ~10 min ceiling.
+**No kill — S1 fully complete.**
+
+⚠️ **RAM note for S9:** measured V3.5 peak RSS is **3.9 GB**, roughly
+double DESIGN §1's ~2 GB estimate. Sequential residency still fits
+(TabPFN 3.9 GB + Node ~0.2 GB ≪ 7.7 GB), but simultaneous residency
+with Gemma (~4–4.5 GB) would exceed the box — DESIGN's spawn-per-run
+decision (§2) is doing real work; do not relax it.
+
+Transient-failure note: the first token-verification attempt failed
+with "could not reach the license server" while the Ollama tarball
+download was saturating the proxy (tabpfn verifies via a 10 s-timeout
+urllib call to `api.priorlabs.ai/protected/`). A controlled retest
+(curl + urllib, both proxies) returned HTTP 200 and the retry
+succeeded — the worker's pre-flight should treat this error as
+retryable, not as "token invalid."
+
+### Cookbook references for S9/S10 (Prior Labs cookbook, Oct 20)
+
+DESIGN remains the authority; these are implementation reference only:
+
+- **"Forecast Related Time Series with TabPFN 3.5"** — individual vs
+  pooled regressors with date/Fourier/autoregressive features. Our
+  pooled choice (§3) matches their guidance; lag / rolling-mean /
+  seasonal feature ideas may enrich the sample builder *if* the FR-9
+  benchmark supports it.
+- **"Get Started with Predictive Distribution"** — `TabPFNRegressor`
+  predictive distributions: if cheap, the report's forecast can carry
+  an expected range instead of a bare point estimate (fits FR-9's
+  honesty angle).
+- **"Faster Inference with KV Cache"** (`fit_with_cache`) — relevant
+  to the per-transaction amount predictions (the `amounts` job).
+- **"Credit Card Fraud Detection with TabPFN"** — reference for
+  anomaly-flag framing and reason strings (§3 thresholds stay ours).
 
 ## S2 — Ollama spike (Oct 20)
 
 - Install: the official script needs `zstd` for extraction; the first
   attempt failed on it (`apt` package lists were stale — `zstd` landed
-  at `/usr/bin/zstd` from a later apt update). Binary: **Ollama 0.40.6**
-  at `/usr/local/bin/ollama`.
+  at `/usr/bin/zstd` from a later apt update). Binary: **Ollama 0.40.6**.
 - Serve command for this VM (no systemd): `ollama serve` as a
   background process.
-- `gemma3:4b` pull: in progress at the time of writing (slow proxy,
-  ~1.3 MB/s). Benchmark numbers (tokens/sec, load time, `keep_alive: 0`
-  unload, peak RSS) land here when the pull completes.
+- ⚠️ **VM-restart lesson (Oct 20):** a runtime restart wiped
+  `/usr/local` — the installed binary (and `zstd`) vanished; the home
+  volume (venv, checkpoints, fixtures) survived. Reinstall therefore
+  targets **`$HOME`** (`~/ollama-dist`), never `/usr/local`.
+- Pull saga: first `ollama pull` failed with a TLS error; routing the
+  serve process through the local egress forwarder (127.0.0.1:8888)
+  made its registry connection hang instead (established TCP, no data;
+  meanwhile curl and Python urllib both reached
+  `registry.ollama.ai` fine through both proxies). Root cause not
+  fully pinned; the retry plan is a fresh `$HOME` install with the
+  plain system proxy. Benchmark numbers (tokens/sec, load time,
+  `keep_alive: 0` unload, peak RSS) land here when the pull completes.
