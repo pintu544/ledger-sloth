@@ -346,15 +346,89 @@ const figuresAreGrounded = (text: string, allowed: ReadonlySet<number>): number[
     (f) => ![...allowed].some((a) => Math.abs(a - f) < 0.005),
   );
 
+/** Raw ₹-figure tokens exactly as written ("1,45,000"), for format checks. */
+export function extractRupeeFigureTokens(text: string): string[] {
+  const out: string[] = [];
+  for (const m of text.matchAll(/₹\s*([\d][\d,]*(?:\.\d+)?)/g)) out.push(m[1]);
+  return out;
+}
+
+const INDIAN_GROUPING = /^\d{1,2}(,\d{2})*,\d{3}(\.\d+)?$/;
+const INTERNATIONAL_GROUPING = /^\d{1,3}(,\d{3})+(\.\d+)?$/;
+
+/**
+ * A comma-grouped token is well-formed iff it follows Indian grouping
+ * (1,45,000) or international grouping (145,000). The S13 sweep
+ * caught Gemma writing "₹11,1622" — the value (111622) exists in the
+ * data, so value-only grounding passed a number no reader can parse.
+ */
+export function isWellFormedFigureToken(token: string): boolean {
+  if (!token.includes(",")) return true;
+  return INDIAN_GROUPING.test(token) || INTERNATIONAL_GROUPING.test(token);
+}
+
+/** ₹ values in the text whose written grouping is malformed. */
+const malformedFigures = (text: string): number[] =>
+  extractRupeeFigureTokens(text)
+    .filter((t) => !isWellFormedFigureToken(t))
+    .map((t) => Number(t.replace(/,/g, "")))
+    .filter((v) => Number.isFinite(v));
+
+const PERIOD_MARKER =
+  /across|overall|in total|whole period|combined|statement period|over the period|all \d+ months/i;
+
+/**
+ * Scope check (S13): a figure whose ONLY source in the payload is a
+ * whole-period scope (wholePeriodByCategory / topMerchants) is
+ * legitimate when framed as a period total, but misleading when a
+ * sentence attaches it to the reviewed month or a monthly change —
+ * the live failure was "a significant increase of ₹52,740", where
+ * ₹52,740 was Shopping's four-month total and the actual September
+ * change was +₹30,148. Returns the mis-scoped figures in `text`.
+ */
+export function findMisScopedFigures(
+  text: string,
+  payload: Record<string, unknown>,
+): number[] {
+  const periodFigures = collectAllowedFigures({
+    wholePeriodByCategory: payload.wholePeriodByCategory,
+    topMerchants: payload.topMerchants,
+  });
+  const latestScope: Record<string, unknown> = { ...payload };
+  delete latestScope.wholePeriodByCategory;
+  delete latestScope.topMerchants;
+  const latestFigures = collectAllowedFigures(latestScope);
+  const periodOnly = [...periodFigures].filter(
+    (p) => ![...latestFigures].some((a) => Math.abs(a - p) < 0.005),
+  );
+  if (periodOnly.length === 0) return [];
+  const bad: number[] = [];
+  for (const sentence of text.split(/(?<=[.!?])\s+/)) {
+    if (PERIOD_MARKER.test(sentence)) continue;
+    for (const f of extractRupeeFigures(sentence)) {
+      if (periodOnly.some((p) => Math.abs(p - f) < 0.005)) bad.push(f);
+    }
+  }
+  return bad;
+}
+
 const NARRATIVE_SYSTEM =
   "You write a short, plain-English month-in-review for a personal bank statement. " +
   "Use ONLY figures from the JSON data provided — copy rupee amounts exactly as they " +
   "appear in the data; never invent, estimate, or substitute a rupee figure that is " +
-  "not in the data. Write two short paragraphs, plain and warm, no tables, no " +
-  "headings. Cover the biggest movements, any flagged anomalies, and the forecast " +
-  "when one is present. If a category's forecast looks inflated because the latest " +
-  "month contained an anomalous charge in that category, say so — the anomaly is " +
-  "in the data.";
+  "not in the data. Mind the SCOPE of every figure: latestMonthSpendByCategory and " +
+  "latestMonthTotalSpend describe the reviewed month only, while wholePeriodByCategory " +
+  "and topMerchants are totals across ALL the months in the data combined — mention " +
+  "those only with whole-period framing (e.g. 'across the whole period'), never as " +
+  "the reviewed month's spending and never as a month-over-month increase. A " +
+  "category's change versus the previous month is given only by its 'change' value " +
+  "in monthOverMonthIntoLatest; call a category rising or falling only when that " +
+  "change says so. Write amounts with standard Indian digit grouping (e.g. " +
+  "₹1,45,000) and never regroup the digits of a figure. Write two short paragraphs, " +
+  "plain and warm, no tables, no headings. Cover the biggest movements, any flagged " +
+  "anomalies, and the forecast when one is present. If a category's forecast looks " +
+  "inflated because the latest month contained an anomalous charge in that " +
+  "category, say so — the anomaly is in the data.";
 
 async function requestNarrative(
   payload: Record<string, unknown>,
@@ -457,18 +531,37 @@ export async function generateNarrative(
   for (let attempt = 1; attempt <= 2; attempt++) {
     requests++;
     const text = await requestNarrative(payload, sterner, cfg);
-    const bad = text === "" ? [Number.NaN] : figuresAreGrounded(text, allowed);
+    // Grounding is three checks, not one (DESIGN §7 + S13 findings):
+    // the figure must exist in the data, be written in well-formed
+    // digit grouping, and be used in its proper scope (a whole-period
+    // total must not pose as a month's amount or a monthly change).
+    const bad =
+      text === ""
+        ? [Number.NaN]
+        : [
+            ...new Set([
+              ...figuresAreGrounded(text, allowed),
+              ...findMisScopedFigures(text, payload),
+              ...malformedFigures(text),
+            ]),
+          ];
     if (text !== "" && bad.length === 0) {
       return { text, source: "gemma", attempts: attempt, inventedFigures: invented, requests };
     }
     const badFigures = bad.filter((f) => Number.isFinite(f));
     invented.push(...badFigures);
     sterner =
-      "Your previous draft used rupee figures that are NOT in the data" +
+      "Your previous draft used rupee figures that failed the grounding check" +
       (badFigures.length > 0
         ? `: ${badFigures.map((f) => fmtINR(f)).join(", ")}`
         : "") +
-      ". Rewrite it using ONLY figures copied exactly from the JSON data.";
+      ". Rewrite it using ONLY figures copied exactly from the JSON data, each in " +
+      "its correct scope: whole-period totals (wholePeriodByCategory, topMerchants) " +
+      "cover all months combined — present them only as period totals ('across " +
+      "the whole period'), never as the reviewed month's amount or as a monthly " +
+      "increase; a category's monthly change is its 'change' value in " +
+      "monthOverMonthIntoLatest. Keep standard digit grouping (e.g. ₹1,45,000); " +
+      "do not regroup digits.";
   }
   return {
     text: templatedNarrative(input),

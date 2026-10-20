@@ -106,7 +106,50 @@ describe("grounding discipline (DESIGN §7)", () => {
     expect(result.source).toBe("gemma");
     expect(result.attempts).toBe(2);
     expect(result.inventedFigures).toContain(999999);
-    expect(chatCalls[1].body.messages[1].content).toContain("NOT in the data");
+    expect(chatCalls[1].body.messages[1].content).toContain("failed the grounding check");
+  });
+
+  it("a whole-period total posed as a monthly increase is rejected (S13 scope check)", async () => {
+    // Groceries' whole-period total is ₹24,600 (12,000 + 12,600); the
+    // reviewed month's figure is ₹12,600 and its change is +₹600.
+    const misScoped = "Groceries saw a significant increase of ₹24,600 this month.";
+    const clean = "You spent ₹12,600 on Groceries in July, up ₹600 from June.";
+    const { fetchFn, chatCalls } = fakeOllama([misScoped, clean]);
+    const result = await generateNarrative(input, { fetchFn });
+    expect(result.source).toBe("gemma");
+    expect(result.attempts).toBe(2);
+    expect(result.inventedFigures).toContain(24600);
+    expect(chatCalls[1].body.messages[1].content).toContain("whole-period");
+  });
+
+  it("a whole-period total framed as a period total is accepted first try", async () => {
+    const framed = "Across the whole period, Groceries totalled ₹24,600 over the two months.";
+    const { fetchFn } = fakeOllama([framed]);
+    const result = await generateNarrative(input, { fetchFn });
+    expect(result.source).toBe("gemma");
+    expect(result.attempts).toBe(1);
+    expect(result.inventedFigures).toEqual([]);
+  });
+
+  it("two mis-scoped drafts fall back to the templated summary", async () => {
+    const misScoped = "Groceries saw a significant increase of ₹24,600 this month.";
+    const { fetchFn } = fakeOllama([misScoped, misScoped]);
+    const result = await generateNarrative(input, { fetchFn });
+    expect(result.source).toBe("template");
+    expect(result.attempts).toBe(2);
+    expect(result.inventedFigures).toContain(24600);
+  });
+
+  it("a malformed digit grouping is rejected even when the value exists (S13)", async () => {
+    // Latest-month total spend is 45,599; "₹455,99" has that value but
+    // neither Indian nor international grouping — unreadable as written.
+    const malformed = "Your total spending came to ₹455,99 in July.";
+    const clean = "Your total spending came to ₹45,599 in July.";
+    const { fetchFn } = fakeOllama([malformed, clean]);
+    const result = await generateNarrative(input, { fetchFn });
+    expect(result.source).toBe("gemma");
+    expect(result.attempts).toBe(2);
+    expect(result.inventedFigures).toContain(45599);
   });
 
   it("two ungrounded drafts fall back to the templated summary, noted in the result", async () => {
