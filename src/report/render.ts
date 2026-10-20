@@ -202,9 +202,9 @@ function metricsSection(m: RunMetrics): string[] {
   const models =
     `gemma3:4b via Ollama${m.ollamaVersion ? ` ${m.ollamaVersion}` : ""} · ` +
     (m.tabpfnVersion
-      ? `tabpfn ${m.tabpfnVersion}${m.checkpoint ? ` · checkpoint ${m.checkpoint} (${m.checkpointMb ?? "?"} MB)` : ""}`
+      ? `tabpfn ${m.tabpfnVersion}${m.checkpoint ? ` · checkpoint ${m.checkpoint} (${m.checkpointMb ?? "?"} MiB)` : ""}`
       : "TabPFN not run (see forecast section)") +
-    (m.pythonEnvMb !== null ? ` · Python env ${m.pythonEnvMb} MB` : "");
+    (m.pythonEnvMb !== null ? ` · Python env ${m.pythonEnvMb} MiB` : "");
   const narrativeLine =
     m.narrativeSource === "template"
       ? `templated summary substituted — both Gemma drafts used figures outside the data` +
@@ -222,7 +222,7 @@ function metricsSection(m: RunMetrics): string[] {
     "",
     `- Rows parsed: ${m.rowsParsed} · excluded as non-transactions: ${m.rowsExcluded}`,
     `- Stage seconds — parse ${s.parse.toFixed(2)} · rules+memory ${s.rulesMemory.toFixed(2)} · ` +
-      `Gemma categorize ${s.gemmaCategorize.toFixed(2)} (${m.gemmaRequests} requests) · ` +
+      `Gemma categorize ${s.gemmaCategorize.toFixed(2)} (${m.gemmaRequests - m.narrativeAttempts} requests) · ` +
       `aggregate ${s.aggregate.toFixed(2)} · TabPFN ${s.tabpfn.toFixed(2)}${fit} · ` +
       `narrative ${s.narrative.toFixed(2)} · render ${s.render.toFixed(2)} · **total ${s.total.toFixed(2)}**`,
     `- Categorization sources — memory ${m.sourceCounts.memory} · rule ${m.sourceCounts.rule} · ` +
