@@ -90,7 +90,7 @@
   cites for why the slow model stays a long-tail tool.
   *Unblocks:* S6, S7.
 
-- [ ] **S6 — Gemma categorizer (Ollama client).**
+- [x] **S6 — Gemma categorizer (Ollama client).**
   `categorize/gemma.ts`: pre-flight via `/api/tags` (server-down vs
   model-missing, both failing with the exact fix commands — no stack
   trace), batched categorization of leftover rows (temp 0, JSON-array

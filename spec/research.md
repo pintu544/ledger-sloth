@@ -120,3 +120,24 @@ AMAZON FRESH → Groceries; JIO RECHARGE ↛ Fees). A real statement's
 long tail of one-off merchants is exactly what Gemma (S6) exists for —
 on this fixture it is the rules, not the model, that carry the number,
 and the post will say so.
+
+## S6 — Gemma categorizer, live verification (Oct 20)
+
+Measured against the real Ollama 0.40.6 + gemma3:4b on this VM
+(server started from `~/ollama-dist/bin/ollama serve`):
+
+| Check | Result |
+|---|---|
+| Dead server | `OllamaUnavailable` with the exact `ollama serve` fix, no stack trace ✅ |
+| Full pipeline over fixture (memory→rules→Gemma) | **accuracy 249/249 (100%)**, sources: memory 0 / rule 249 / gemma 0 / other 0 |
+| Gemma alone, every-10th-row sample (25 real narrations) | **23/25 (92.0%)**, 192 s, 2 requests, 0 invalid rows, 0 failed batches |
+| Gemma alone, 8 synthetic *unseen* merchants (rules-misses by construction) | **8/8** — Zudio→Shopping, Bikanervala→Food & Dining, Zoom→Subscriptions, Dr Lal PathLabs→Health & Pharmacy, Wendy's→Food & Dining, The Decor Store→Shopping, Kalyan Jewellers→Shopping, EaseMyTrip→Transport |
+| Unload discipline | after the stage's final (`keep_alive: 0`) request, `/api/ps` is empty ✅ |
+
+The two Gemma-only misses are instructive, not alarming: an incoming
+P2P credit (`UPI-ANITA KUMAR-…`) read as Income where ground truth
+says Transfers, and a Jio prepaid recharge read as Subscriptions
+where our taxonomy says Utilities & Bills. Both are cases the
+deterministic layer resolves by construction — which is the design
+working as intended: rules carry the taxonomy's edge conventions,
+the model carries the open world.

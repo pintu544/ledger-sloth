@@ -33,6 +33,57 @@ export interface CategorizedTxn extends Txn {
   source: "memory" | "rule" | "gemma" | "other";
 }
 
+/** Per-category roll-up over a set of categorized transactions. */
+export interface CategoryStats {
+  category: Category;
+  count: number;
+  /** Sum of positive amounts (money in). */
+  credits: number;
+  /** Sum of debit magnitudes (money out), as a positive number. */
+  debits: number;
+  /** credits - debits (== the signed sum). */
+  net: number;
+  /** Median of debit amounts (positive magnitudes); 0 when no debits. */
+  medianDebit: number;
+  /** Median absolute deviation of debit amounts; 0 when no debits. */
+  madDebit: number;
+}
+
+/** One (month, category) cell of spend — the worker's monthlyTotals shape (DESIGN §2). */
+export interface CategoryMonthTotal {
+  month: string;
+  category: Category;
+  /** Debit spend (positive magnitudes). */
+  total: number;
+  count: number;
+}
+
+export interface MonthDelta {
+  category: Category;
+  month: string;
+  prevMonth: string;
+  /** Spend change vs the previous month (signed). */
+  delta: number;
+  /** delta / previous spend; null when the previous month had no spend. */
+  pct: number | null;
+}
+
+export interface MerchantTotal {
+  merchantKey: string;
+  count: number;
+  /** Total debit spend (positive magnitudes). */
+  debits: number;
+}
+
+export interface Aggregates {
+  /** Sorted statement months present in the input, YYYY-MM. */
+  months: string[];
+  byCategory: CategoryStats[];
+  monthlyTotals: CategoryMonthTotal[];
+  deltas: MonthDelta[];
+  topMerchants: MerchantTotal[];
+}
+
 /** Fatal, user-facing parse failure — plain message, no artifacts (SPEC). */
 export class ParseError extends Error {
   constructor(message: string) {
