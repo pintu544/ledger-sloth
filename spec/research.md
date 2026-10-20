@@ -169,3 +169,48 @@ decide: leave-one-out merchant median (median of the merchant's
 *other* debits, falling back to the category median when the merchant
 has only one) — same feature names, no target in the feature. S9
 ships the DESIGN-literal features; the flag test is S10's.
+
+## S10 decision — leave-one-out merchant median in `buildDebits` (Oct 20)
+
+**Decided (parent) and applied:** the `merchantMedian` feature built
+in `src/tabpfn/client.ts` (`buildDebits`) is a **leave-one-out
+median** — the median of the merchant's *other* debits — falling
+back to the category median when the merchant has only one debit.
+Feature names and the worker protocol are unchanged; Python still
+only fits/predicts on the rows TS hands it.
+
+**Rationale — methodology beats DESIGN-literalism here.** DESIGN §3's
+literal merchant median includes the row being scored, so for a
+single-occurrence merchant the feature *is* the target: the planted
+CROMA charge's `merchantMedian` was its own ₹32,999, and the model
+reasonably predicted ₹21,834 (ratio 1.51×) — under §3's own flag rule
+(> 2.5× and gap > ₹1,000) the fixture's one planted anomaly would
+never flag, failing the SPEC's anomaly acceptance ("the planted
+anomalous charge appears in the report's anomaly list") by
+construction, not by model quality. A feature that contains the
+answer is a leak in any methodology review; removing it keeps the
+feature set, the thresholds, and the pooled philosophy of §3 intact
+while making the acceptance testable. The category median is *not*
+leave-one-out: it aggregates dozens of rows per category, the S9
+measurement showed it clean (₹1,774 for Shopping), and changing it
+was not needed to close the leak.
+
+**Measured follow-up (same day): the feature fix alone was not
+enough.** With LOO features, the amounts model still "expected"
+**₹20,294** for the CROMA row (ratio 1.63×) — because DESIGN §3's
+amounts protocol fits on all debits and predicts the same rows, and
+TabPFN is an in-context learner: the row sits in its own context
+with target ₹32,999, under a `merchantKey` ("croma") that occurs
+exactly once, and the prediction is pulled toward it. Every other
+Shopping row predicted ₹1,500–2,800 on near-identical features, so
+the pull is the self-row, not the features. **Remedy applied in the
+worker: the amounts job is now K-fold cross-fitted (5 deterministic
+folds by id order)** — each debit is predicted by a model fit on the
+other folds only; a row is never scored by a model that saw it. This
+deviates from §3's "fit on all debits, predict all debits in one
+batched call" in the same spirit as the median fix: self-scoring an
+anomaly detector on its own training rows is a leak, and the
+one-batched-*request* protocol (§2) is untouched — the folds live
+inside the single worker invocation. Forecast/benchmark jobs are
+unchanged: their test rows are constructed future/held-out months,
+never training targets.

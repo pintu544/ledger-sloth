@@ -116,12 +116,28 @@ describe("buildDebits (DESIGN §2 debit shape)", () => {
     expect(debits[0].month).toBe("2026-09");
   });
 
-  it("merchant and category medians come from the debit history", () => {
+  it("merchant median is leave-one-out; category median is the plain median", () => {
     const debits = buildDebits(txns, aggs);
-    // Croma debits: 32999, 2400 -> median 17699.5; same for Shopping.
+    // Croma debits: 32999 (id 1), 2400 (id 2). LOO: each row sees
+    // only the OTHER Croma debit. Category median keeps both: 17699.5.
     expect(debits[0].merchantKey).toBe("croma");
-    expect(debits[0].merchantMedian).toBe(17699.5);
+    expect(debits[0].merchantMedian).toBe(2400);
+    expect(debits[1].merchantMedian).toBe(32999);
     expect(debits[0].categoryMedian).toBe(17699.5);
+    expect(debits[1].categoryMedian).toBe(17699.5);
+  });
+
+  it("a single-occurrence merchant falls back to the category median (no self-leak)", () => {
+    const single: CategorizedTxn[] = [
+      { id: 1, date: "2026-09-10", description: "POS-CROMA VASHI", amount: -32999, category: "Shopping", source: "rule" },
+      { id: 2, date: "2026-09-11", description: "AMAZON RETAIL", amount: -1500, category: "Shopping", source: "rule" },
+      { id: 3, date: "2026-09-12", description: "MYNTRA DESIGNS", amount: -2500, category: "Shopping", source: "rule" },
+    ];
+    const debits = buildDebits(single, aggregate(single));
+    // Shopping median over [32999, 1500, 2500] = 2500 — the CROMA row
+    // must NOT see its own 32999 as its merchant median.
+    expect(debits[0].merchantMedian).toBe(2500);
+    expect(debits[0].merchantMedian).toBe(debits[0].categoryMedian);
   });
 });
 
@@ -304,6 +320,20 @@ describe("runTabpfn with an injected fake worker", () => {
 const { txns } = parseStatement(readFileSync("fixtures/statement.csv", "utf8"));
 const { categorized } = categorizeDeterministic(txns, []);
 const fixtureAggs = aggregate(categorized);
+
+describe("buildDebits on the fixture (LOO merchant median)", () => {
+  it("planted CROMA row (id 220) does not leak its own amount into merchantMedian", () => {
+    const debits = buildDebits(categorized, fixtureAggs);
+    const croma = debits.find((d) => d.id === 220)!;
+    const shoppingMedian = fixtureAggs.byCategory.find(
+      (c) => c.category === "Shopping",
+    )!.medianDebit;
+    // CROMA occurs exactly once in the fixture, so the LOO median is
+    // the Shopping category median — clean, and far below ₹32,999.
+    expect(croma.merchantMedian).toBe(shoppingMedian);
+    expect(croma.merchantMedian).toBeLessThan(32999 / 2.5);
+  });
+});
 const SPEND_CATEGORIES = [
   ...new Set(fixtureAggs.monthlyTotals.filter((t) => t.category !== "Income").map((t) => t.category)),
 ].sort();
@@ -331,6 +361,12 @@ describe("worker round-trip on the fixture (real TabPFN)", () => {
       const cromaExpected = result.amounts["220"]; // planted anomaly row
       expect(cromaExpected).toBeGreaterThan(0);
       expect(cromaExpected).toBeLessThan(32999);
+      // S10 acceptance: with the LOO merchant median the DESIGN §3
+      // flag rule (ratio > 2.5x AND gap > ₹1,000) can actually fire
+      // on the planted anomaly — it could not while the feature
+      // leaked the row's own amount.
+      expect(32999).toBeGreaterThan(2.5 * cromaExpected);
+      expect(32999 - cromaExpected).toBeGreaterThan(1000);
       expect(result.meta?.tabpfn).toBe("9.2.0");
       expect(result.meta?.checkpoint).toMatch(/^tabpfn-v3\.5-/);
       expect(Object.keys(result.meta!.fitSeconds).sort()).toEqual(["amounts", "benchmark", "forecast"]);

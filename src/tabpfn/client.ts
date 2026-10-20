@@ -233,27 +233,41 @@ export function buildBenchmarkSamples(monthlyTotals: readonly CategoryMonthTotal
   return { train, test };
 }
 
-/** Per-debit feature rows for the amounts job (DESIGN §2/§3). */
+/**
+ * Per-debit feature rows for the amounts job (DESIGN §2/§3).
+ *
+ * `merchantMedian` is a LEAVE-ONE-OUT median (S10 decision,
+ * spec/research.md): the median of the merchant's OTHER debits,
+ * never this row's own amount. The DESIGN-literal median leaks the
+ * target for single-occurrence merchants — the planted CROMA
+ * charge's median was its own ₹32,999, so the model "expected"
+ * ₹21,834 and the §3 flag rule could never fire. A merchant with a
+ * single debit falls back to the category median.
+ */
 export function buildDebits(
   txns: readonly CategorizedTxn[],
   aggregates: Aggregates,
 ): DebitFeatures[] {
   const debitTxns = txns.filter((t) => t.amount < 0);
-  const byMerchant = new Map<string, number[]>();
-  for (const t of debitTxns) {
-    const key = merchantKey(t.description);
-    const list = byMerchant.get(key) ?? [];
-    list.push(-t.amount);
-    byMerchant.set(key, list);
-  }
-  const merchantMedians = new Map(
-    [...byMerchant.entries()].map(([k, v]) => [k, median(v)] as const),
-  );
   const categoryMedians = new Map(
     aggregates.byCategory.map((c) => [c.category, c.medianDebit] as const),
   );
-  return debitTxns.map((t) => {
+  // Positions of each merchant's debits within debitTxns, so each
+  // row's LOO median can exclude exactly itself.
+  const positionsByMerchant = new Map<string, number[]>();
+  debitTxns.forEach((t, i) => {
     const key = merchantKey(t.description);
+    const list = positionsByMerchant.get(key) ?? [];
+    list.push(i);
+    positionsByMerchant.set(key, list);
+  });
+  return debitTxns.map((t, i) => {
+    const key = merchantKey(t.description);
+    const categoryMedian = categoryMedians.get(t.category) ?? 0;
+    const others = (positionsByMerchant.get(key) ?? [])
+      .filter((p) => p !== i)
+      .map((p) => -debitTxns[p].amount);
+    const merchantMedian = others.length > 0 ? median(others) : categoryMedian;
     return {
       id: t.id,
       month: t.date.slice(0, 7),
@@ -264,8 +278,8 @@ export function buildDebits(
       dayOfMonth: Number(t.date.slice(8, 10)),
       weekday: new Date(`${t.date}T00:00:00Z`).getUTCDay(),
       merchantKey: key,
-      categoryMedian: categoryMedians.get(t.category) ?? 0,
-      merchantMedian: merchantMedians.get(key) ?? 0,
+      categoryMedian,
+      merchantMedian,
     };
   });
 }

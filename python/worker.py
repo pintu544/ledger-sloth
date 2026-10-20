@@ -10,8 +10,15 @@ lives in TypeScript.
 Jobs (DESIGN §2/§3):
   forecast   pooled TabPFNRegressor on TS-built sliding samples
   benchmark  same builder, cutoff moved (samples arrive pre-built)
-  amounts    pooled regressor over the request's debits, fit and
-             predict on the same rows (expected-amount scoring)
+  amounts    pooled regressor over the request's debits, scored
+             OUT-OF-FOLD (K-fold cross-fitting): each debit is
+             predicted by a model fit on the other folds, never on
+             a training set containing itself. Self-scoring leaks —
+             TabPFN is an in-context learner and partly reproduces
+             an outlier it can see (measured: the planted ₹32,999
+             charge "expected" ₹20,294 when scored in-sample, even
+             with de-leaked features). Cross-fitting is the standard
+             de-leaked way to score rows for anomaly detection.
 
 The v3.5 checkpoint and license token come from the local tabpfn
 cache (~/.cache/tabpfn) — fully offline after the one-time setup
@@ -73,14 +80,37 @@ def samples_job(sample_set):
     return fit_predict(train, test, FORECAST_FEATURES)
 
 
+AMOUNTS_FOLDS = 5
+
+
 def amounts_job(debits):
-    train = []
-    test = []
-    for d in debits:
+    """Out-of-fold expected amounts via deterministic K-fold
+    cross-fitting (fold = position in id order). With fewer rows
+    than folds, folds shrink to the row count; a single debit cannot
+    be held out from anything, so it falls back to a self-fit (its
+    prediction then tracks itself and TS's flag rule stays quiet —
+    honest, since one row is no history to be anomalous against)."""
+    rows = sorted(debits, key=lambda d: d["id"])
+    n = len(rows)
+    if n == 0:
+        return {}
+    if n == 1:
+        d = rows[0]
         row = {f: d[f] for f in AMOUNT_FEATURES}
-        train.append({**row, "target": d["amount"]})
-        test.append({**row, "key": d["id"]})
-    return fit_predict(train, test, AMOUNT_FEATURES)
+        return fit_predict([{**row, "target": d["amount"]}], [{**row, "key": d["id"]}], AMOUNT_FEATURES)
+    folds = min(AMOUNTS_FOLDS, n)
+    out = {}
+    for fold in range(folds):
+        train = []
+        test = []
+        for i, d in enumerate(rows):
+            row = {f: d[f] for f in AMOUNT_FEATURES}
+            if i % folds == fold:
+                test.append({**row, "key": d["id"]})
+            else:
+                train.append({**row, "target": d["amount"]})
+        out.update(fit_predict(train, test, AMOUNT_FEATURES))
+    return out
 
 
 def checkpoint_name():
