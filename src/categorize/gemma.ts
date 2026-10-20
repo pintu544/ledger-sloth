@@ -15,7 +15,15 @@
 // (DESIGN §1/§2), and this is where the TS side enforces its half.
 
 import { CATEGORIES, isCategory } from "./categories.js";
-import { OllamaUnavailable, type CategorizedTxn, type Category, type Txn } from "../types.js";
+import { fmtINR } from "../format.js";
+import {
+  OllamaUnavailable,
+  type Aggregates,
+  type Anomaly,
+  type CategorizedTxn,
+  type Category,
+  type Txn,
+} from "../types.js";
 
 export const DEFAULT_OLLAMA_URL = "http://localhost:11434";
 export const DEFAULT_MODEL = "gemma3:4b";
@@ -211,4 +219,262 @@ export async function categorizeWithGemma(
     });
   }
   return { categorized, metrics };
+}
+
+// ---------------------------------------------------------------------------
+// Narrative (SPEC FR-6, DESIGN §7): the month-in-review, grounded by
+// construction and then VERIFIED. The prompt contains only the
+// aggregates JSON; after generation, every ₹-figure in the text is
+// extracted and checked against that JSON. A failed check retries
+// once with a sterner prompt; a second failure substitutes a
+// deterministic templated summary. The model proposes; the code
+// disposes.
+// ---------------------------------------------------------------------------
+
+export interface NarrativeInput {
+  aggregates: Aggregates;
+  /** Credits received in the latest month (Aggregates tracks spend
+   * per month; the caller computes income from the transactions). */
+  latestMonthIncome: number;
+  anomalies: readonly Anomaly[];
+  /** Next-month forecast per category (raw model output), or null. */
+  forecast: Record<string, number> | null;
+  /** Why there is no forecast (unavailable / insufficient history), or null. */
+  forecastNote: string | null;
+  benchmark: {
+    heldOutMonth: string;
+    tabpfnMae: number;
+    naiveMae: number;
+    winner: string;
+  } | null;
+}
+
+export interface NarrativeResult {
+  text: string;
+  source: "gemma" | "template";
+  /** Gemma attempts made (1 or 2); 2 with source "template" means both failed grounding. */
+  attempts: number;
+  /** ₹ figures that failed the grounding check on failed attempts. */
+  inventedFigures: number[];
+  requests: number;
+}
+
+/** The JSON document the narrative prompt is allowed to see — nothing else. */
+export function buildNarrativePayload(input: NarrativeInput): Record<string, unknown> {
+  const { aggregates: aggs, anomalies, forecast, forecastNote, benchmark } = input;
+  const latestMonth = aggs.months[aggs.months.length - 1];
+  const latestTotals = aggs.monthlyTotals.filter((t) => t.month === latestMonth);
+  const latestDeltas = aggs.deltas.filter((d) => d.month === latestMonth);
+  return {
+    months: aggs.months,
+    latestMonth,
+    latestMonthSpendByCategory: latestTotals
+      .filter((t) => t.category !== "Income")
+      .map((t) => ({ category: t.category, totalSpend: t.total, transactions: t.count })),
+    // A derived total, computed by TS from the same aggregates —
+    // part of the data, so a narrative citing it is grounded.
+    latestMonthTotalSpend: latestTotals
+      .filter((t) => t.category !== "Income")
+      .reduce((s, t) => s + t.total, 0),
+    latestMonthIncome: input.latestMonthIncome,
+    wholePeriodByCategory: aggs.byCategory.map((c) => ({
+      category: c.category,
+      totalSpend: c.debits,
+      totalIn: c.credits,
+      transactions: c.count,
+      medianDebit: c.medianDebit,
+    })),
+    monthOverMonthIntoLatest: latestDeltas.map((d) => ({
+      category: d.category,
+      change: d.delta,
+      pctChange: d.pct,
+    })),
+    topMerchants: aggs.topMerchants.map((m) => ({
+      merchant: m.merchantKey,
+      totalSpend: m.debits,
+      transactions: m.count,
+    })),
+    anomalies: anomalies.map((a) => ({
+      date: a.date,
+      description: a.description,
+      amount: a.amount,
+      expected: a.expected,
+      reason: a.reason,
+    })),
+    forecastNextMonth: forecast,
+    forecastNote,
+    benchmark,
+  };
+}
+
+/** Every ₹-figure in a text, as numbers ("₹1,45,000" -> 145000). */
+export function extractRupeeFigures(text: string): number[] {
+  const out: number[] = [];
+  for (const m of text.matchAll(/₹\s*([\d][\d,]*(?:\.\d+)?)/g)) {
+    const v = Number(m[1].replace(/,/g, ""));
+    if (Number.isFinite(v)) out.push(v);
+  }
+  return out;
+}
+
+/**
+ * The figures a narrative may legitimately use: every number in the
+ * payload, its whole-rupee rounding, and any ₹ figures already
+ * inside payload strings (anomaly reason strings carry rounded
+ * expectations).
+ */
+export function collectAllowedFigures(payload: unknown): Set<number> {
+  const allowed = new Set<number>();
+  const walk = (v: unknown): void => {
+    if (typeof v === "number" && Number.isFinite(v)) {
+      allowed.add(v);
+      allowed.add(Math.round(v));
+    } else if (typeof v === "string") {
+      for (const f of extractRupeeFigures(v)) allowed.add(f);
+    } else if (Array.isArray(v)) {
+      v.forEach(walk);
+    } else if (v !== null && typeof v === "object") {
+      Object.values(v).forEach(walk);
+    }
+  };
+  walk(payload);
+  return allowed;
+}
+
+const figuresAreGrounded = (text: string, allowed: ReadonlySet<number>): number[] =>
+  extractRupeeFigures(text).filter(
+    (f) => ![...allowed].some((a) => Math.abs(a - f) < 0.005),
+  );
+
+const NARRATIVE_SYSTEM =
+  "You write a short, plain-English month-in-review for a personal bank statement. " +
+  "Use ONLY figures from the JSON data provided — copy rupee amounts exactly as they " +
+  "appear in the data; never invent, estimate, or substitute a rupee figure that is " +
+  "not in the data. Write two short paragraphs, plain and warm, no tables, no " +
+  "headings. Cover the biggest movements, any flagged anomalies, and the forecast " +
+  "when one is present. If a category's forecast looks inflated because the latest " +
+  "month contained an anomalous charge in that category, say so — the anomaly is " +
+  "in the data.";
+
+async function requestNarrative(
+  payload: Record<string, unknown>,
+  sterner: string | null,
+  cfg: Required<GemmaOptions>,
+): Promise<string> {
+  const user =
+    `Data:\n${JSON.stringify(payload, null, 1)}\n\n` +
+    `Write the month-in-review for ${String(payload.latestMonth)}.` +
+    (sterner ? `\n\n${sterner}` : "");
+  let res: Response;
+  try {
+    res = await cfg.fetchFn(`${cfg.baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: cfg.model,
+        stream: false,
+        options: { temperature: 0 },
+        keep_alive: 0,
+        messages: [
+          { role: "system", content: NARRATIVE_SYSTEM },
+          { role: "user", content: user },
+        ],
+      }),
+      signal: AbortSignal.timeout(cfg.timeoutMs),
+    });
+  } catch {
+    throw serverDown(cfg.baseUrl);
+  }
+  if (!res.ok) throw serverDown(cfg.baseUrl);
+  const body = (await res.json()) as { message?: { content?: string } };
+  return typeof body.message?.content === "string" ? body.message.content.trim() : "";
+}
+
+/** Deterministic fallback summary — built only from the aggregates. */
+export function templatedNarrative(input: NarrativeInput): string {
+  const { aggregates: aggs, anomalies, forecast, forecastNote } = input;
+  const latestMonth = aggs.months[aggs.months.length - 1];
+  const latest = aggs.monthlyTotals.filter((t) => t.month === latestMonth);
+  const spendRows = latest
+    .filter((t) => t.category !== "Income")
+    .sort((a, b) => b.total - a.total);
+  const totalSpend = spendRows.reduce((s, t) => s + t.total, 0);
+  const income = input.latestMonthIncome;
+  const parts: string[] = [];
+  parts.push(
+    `In ${latestMonth} you spent ${fmtINR(totalSpend)} across ${spendRows.length} categories` +
+      (income > 0 ? ` and received ${fmtINR(income)} in income.` : "."),
+  );
+  if (spendRows.length > 0) {
+    const top = spendRows[0];
+    const delta = aggs.deltas.find(
+      (d) => d.month === latestMonth && d.category === top.category,
+    );
+    const deltaText =
+      delta && delta.delta !== 0
+        ? ` (${delta.delta > 0 ? "up" : "down"} ${fmtINR(Math.abs(delta.delta))} from ${delta.prevMonth})`
+        : "";
+    parts.push(`The largest category was ${top.category} at ${fmtINR(top.total)}${deltaText}.`);
+  }
+  if (anomalies.length > 0) {
+    const a = anomalies[0];
+    parts.push(
+      `${anomalies.length === 1 ? "One charge stands out" : `${anomalies.length} charges stand out`}: ` +
+        `${a.reason} (${a.date}).`,
+    );
+  }
+  if (forecast) {
+    const top3 = Object.entries(forecast)
+      .sort((x, y) => y[1] - x[1])
+      .slice(0, 3)
+      .map(([c, v]) => `${c} ~${fmtINR(Math.round(v))}`)
+      .join(", ");
+    parts.push(`Next month's forecast (the model's raw output, unadjusted): ${top3}.`);
+  } else if (forecastNote) {
+    parts.push(`No forecast this run: ${forecastNote}`);
+  }
+  return parts.join(" ");
+}
+
+/**
+ * Generate the month-in-review with grounding enforcement (DESIGN
+ * §7): Gemma draft -> figure check -> one sterner retry -> templated
+ * fallback. Throws OllamaUnavailable when Ollama itself cannot serve
+ * (SPEC failure mode: exact fix commands, fatal at the CLI).
+ */
+export async function generateNarrative(
+  input: NarrativeInput,
+  opts: GemmaOptions = {},
+): Promise<NarrativeResult> {
+  const cfg = resolveOptions(opts);
+  await preflightGemma(opts);
+  const payload = buildNarrativePayload(input);
+  const allowed = collectAllowedFigures(payload);
+
+  let requests = 0;
+  let sterner: string | null = null;
+  const invented: number[] = [];
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    requests++;
+    const text = await requestNarrative(payload, sterner, cfg);
+    const bad = text === "" ? [Number.NaN] : figuresAreGrounded(text, allowed);
+    if (text !== "" && bad.length === 0) {
+      return { text, source: "gemma", attempts: attempt, inventedFigures: invented, requests };
+    }
+    const badFigures = bad.filter((f) => Number.isFinite(f));
+    invented.push(...badFigures);
+    sterner =
+      "Your previous draft used rupee figures that are NOT in the data" +
+      (badFigures.length > 0
+        ? `: ${badFigures.map((f) => fmtINR(f)).join(", ")}`
+        : "") +
+      ". Rewrite it using ONLY figures copied exactly from the JSON data.";
+  }
+  return {
+    text: templatedNarrative(input),
+    source: "template",
+    attempts: 2,
+    inventedFigures: invented,
+    requests,
+  };
 }
