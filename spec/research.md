@@ -141,3 +141,31 @@ where our taxonomy says Utilities & Bills. Both are cases the
 deterministic layer resolves by construction — which is the design
 working as intended: rules carry the taxonomy's edge conventions,
 the model carries the open world.
+
+## S9 — TabPFN worker + client, measured on the fixture (Oct 20)
+
+Worker (`python/worker.py`, spawn-per-run, one JSON over stdio) +
+client (`src/tabpfn/client.ts`: preflight token → venv → checkpoint,
+deterministic DESIGN §3 sample builders, data-driven job selection).
+Full fixture round trip (249 txns, 4 months, all three jobs):
+
+| Measure | Result |
+|---|---|
+| Fit seconds (worker meta) | forecast 6.5 · benchmark 2.3 · amounts 22.5 (~31 s + startup) |
+| Forecast keys | exactly the 12 spend categories with history — no Income, no zero-history `Other`, no fabricated ₹0 |
+| Benchmark (held-out Sep 2026) predictions vs actual | close on steady categories (Rent 28,005 vs 28,000; Food & Dining 14,828 vs 14,641; Transport 4,195 vs 4,008) — Shopping 5,795 vs 36,147, because Sep's actual contains the planted anomaly. The FR-9 verdict itself is S10's to compute |
+| Amounts coverage | all 243 debits scored |
+| License path | the venv runs v3.5 from the cached `~/.cache/tabpfn/auth_token` + checkpoint — `TABPFN_TOKEN` need not be in the shell env (verified with the var unset); preflight accepts either |
+
+**⚠️ Finding for S10 — target leak in the amounts features.** The
+expected amount for the planted CROMA anomaly (id 220, ₹32,999) came
+out **₹21,834 — a ratio of only 1.51×**, which does NOT cross DESIGN
+§3's flag rule (actual > 2.5× predicted AND gap > ₹1,000; the gap,
+₹11,165, passes — the ratio fails). Mechanism: CROMA occurs exactly
+once in the fixture, so the §3 `merchantMedian` feature for that row
+is the anomaly's own amount (₹32,999) — the feature leaks the target.
+The category median is clean (₹1,774). Candidate remedy for S10 to
+decide: leave-one-out merchant median (median of the merchant's
+*other* debits, falling back to the category median when the merchant
+has only one) — same feature names, no target in the feature. S9
+ships the DESIGN-literal features; the flag test is S10's.

@@ -127,7 +127,7 @@
 
 ## Slice 3 — Day 3 (Oct 23): TabPFN forecast + anomaly + honest benchmark
 
-- [ ] **S9 🔑 — Python worker + TS client.**
+- [x] **S9 🔑 — Python worker + TS client.**
   `python/worker.py` (the three jobs of DESIGN §2/§3: pooled-regressor
   forecast, benchmark predictions at the moved cutoff, per-debit
   amount predictions; exactly one JSON object on stdout) +
