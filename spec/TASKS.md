@@ -103,7 +103,7 @@
   (memory/rule/gemma/other) appear in metrics.
   *Unblocks:* S12 (full pipeline).
 
-- [ ] **S7 — Aggregates + categorized CSV writer.**
+- [x] **S7 — Aggregates + categorized CSV writer.**
   `aggregate.ts` (per-category totals/counts, MoM deltas, top
   merchants, median/MAD) and `report/csvOut.ts` (fixed columns, input
   order).
