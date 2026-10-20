@@ -112,7 +112,7 @@
   writer produce byte-identical output (test).
   *Unblocks:* S9 (worker consumes monthly totals), S11, S12.
 
-- [ ] **S8 — DEV post skeleton (day 2, parallel with Slice 2).**
+- [x] **S8 — DEV post skeleton (day 2, parallel with Slice 2).**
   `DEV-POST.md`: title, the dreaded-monthly-chore hook, architecture
   (DESIGN §1 diagram in words), the why-open essay draft (bank
   statements are data you never upload; open weights make this
