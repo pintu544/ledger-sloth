@@ -84,6 +84,45 @@ export interface Aggregates {
   topMerchants: MerchantTotal[];
 }
 
+/** One flagged anomalous debit (SPEC FR-8), judged in TS (DESIGN §3). */
+export interface Anomaly {
+  id: number;
+  /** ISO date, YYYY-MM-DD. */
+  date: string;
+  description: string;
+  category: Category;
+  /** Actual debit amount (positive magnitude). */
+  amount: number;
+  /** TabPFN expected amount for this debit (out-of-fold prediction). */
+  expected: number;
+  /** amount / expected. */
+  ratio: number;
+  /** amount - expected. */
+  gap: number;
+  /** One-line reason built from the actual numbers (DESIGN §3). */
+  reason: string;
+}
+
+/** One category's row of the FR-9 benchmark on the held-out month. */
+export interface CategoryBenchmark {
+  category: Category;
+  tabpfnPrediction: number;
+  /** Naive baseline: the previous month's total, carried forward. */
+  naivePrediction: number;
+  actual: number;
+  tabpfnError: number;
+  naiveError: number;
+}
+
+/** The FR-9 verdict: TabPFN vs naive on the held-out last month. */
+export interface BenchmarkVerdict {
+  heldOutMonth: string;
+  perCategory: CategoryBenchmark[];
+  tabpfnMae: number;
+  naiveMae: number;
+  winner: "TabPFN" | "naive" | "tie";
+}
+
 /** Fatal, user-facing parse failure — plain message, no artifacts (SPEC). */
 export class ParseError extends Error {
   constructor(message: string) {
