@@ -1,0 +1,1007 @@
+{
+  "referenceDate": "2026-10-01",
+  "heldOutMonth": "2026-09",
+  "forecastTargetMonth": "2026-10",
+  "plantedAnomalyRowId": 220,
+  "totalTransactions": 249,
+  "excludedRowCount": 2,
+  "finalBalance": 316121.55,
+  "rows": [
+    {
+      "id": 1,
+      "category": "Income"
+    },
+    {
+      "id": 2,
+      "category": "Utilities & Bills"
+    },
+    {
+      "id": 3,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 4,
+      "category": "Groceries"
+    },
+    {
+      "id": 5,
+      "category": "Transport"
+    },
+    {
+      "id": 6,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 7,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 8,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 9,
+      "category": "Transport"
+    },
+    {
+      "id": 10,
+      "category": "Rent & Housing"
+    },
+    {
+      "id": 11,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 12,
+      "category": "Transport"
+    },
+    {
+      "id": 13,
+      "category": "Shopping"
+    },
+    {
+      "id": 14,
+      "category": "Transport"
+    },
+    {
+      "id": 15,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 16,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 17,
+      "category": "Utilities & Bills"
+    },
+    {
+      "id": 18,
+      "category": "Transport"
+    },
+    {
+      "id": 19,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 20,
+      "category": "Subscriptions"
+    },
+    {
+      "id": 21,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 22,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 23,
+      "category": "Investments"
+    },
+    {
+      "id": 24,
+      "category": "Subscriptions"
+    },
+    {
+      "id": 25,
+      "category": "Groceries"
+    },
+    {
+      "id": 26,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 27,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 28,
+      "category": "Entertainment"
+    },
+    {
+      "id": 29,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 30,
+      "category": "Transport"
+    },
+    {
+      "id": 31,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 32,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 33,
+      "category": "Transfers"
+    },
+    {
+      "id": 34,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 35,
+      "category": "Health & Pharmacy"
+    },
+    {
+      "id": 36,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 37,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 38,
+      "category": "Transport"
+    },
+    {
+      "id": 39,
+      "category": "Transport"
+    },
+    {
+      "id": 40,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 41,
+      "category": "Shopping"
+    },
+    {
+      "id": 42,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 43,
+      "category": "Transport"
+    },
+    {
+      "id": 44,
+      "category": "Groceries"
+    },
+    {
+      "id": 45,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 46,
+      "category": "Transport"
+    },
+    {
+      "id": 47,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 48,
+      "category": "Transfers"
+    },
+    {
+      "id": 49,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 50,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 51,
+      "category": "Transport"
+    },
+    {
+      "id": 52,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 53,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 54,
+      "category": "Transport"
+    },
+    {
+      "id": 55,
+      "category": "Shopping"
+    },
+    {
+      "id": 56,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 57,
+      "category": "Transport"
+    },
+    {
+      "id": 58,
+      "category": "Transfers"
+    },
+    {
+      "id": 59,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 60,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 61,
+      "category": "Transport"
+    },
+    {
+      "id": 62,
+      "category": "Transport"
+    },
+    {
+      "id": 63,
+      "category": "Income"
+    },
+    {
+      "id": 64,
+      "category": "Income"
+    },
+    {
+      "id": 65,
+      "category": "Utilities & Bills"
+    },
+    {
+      "id": 66,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 67,
+      "category": "Transport"
+    },
+    {
+      "id": 68,
+      "category": "Groceries"
+    },
+    {
+      "id": 69,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 70,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 71,
+      "category": "Transport"
+    },
+    {
+      "id": 72,
+      "category": "Rent & Housing"
+    },
+    {
+      "id": 73,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 74,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 75,
+      "category": "Transport"
+    },
+    {
+      "id": 76,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 77,
+      "category": "Transport"
+    },
+    {
+      "id": 78,
+      "category": "Shopping"
+    },
+    {
+      "id": 79,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 80,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 81,
+      "category": "Utilities & Bills"
+    },
+    {
+      "id": 82,
+      "category": "Subscriptions"
+    },
+    {
+      "id": 83,
+      "category": "Transport"
+    },
+    {
+      "id": 84,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 85,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 86,
+      "category": "Investments"
+    },
+    {
+      "id": 87,
+      "category": "Subscriptions"
+    },
+    {
+      "id": 88,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 89,
+      "category": "Transport"
+    },
+    {
+      "id": 90,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 91,
+      "category": "Groceries"
+    },
+    {
+      "id": 92,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 93,
+      "category": "Entertainment"
+    },
+    {
+      "id": 94,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 95,
+      "category": "Transport"
+    },
+    {
+      "id": 96,
+      "category": "Transfers"
+    },
+    {
+      "id": 97,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 98,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 99,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 100,
+      "category": "Health & Pharmacy"
+    },
+    {
+      "id": 101,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 102,
+      "category": "Transport"
+    },
+    {
+      "id": 103,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 104,
+      "category": "Transport"
+    },
+    {
+      "id": 105,
+      "category": "Transport"
+    },
+    {
+      "id": 106,
+      "category": "Groceries"
+    },
+    {
+      "id": 107,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 108,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 109,
+      "category": "Shopping"
+    },
+    {
+      "id": 110,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 111,
+      "category": "Transport"
+    },
+    {
+      "id": 112,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 113,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 114,
+      "category": "Transfers"
+    },
+    {
+      "id": 115,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 116,
+      "category": "Transport"
+    },
+    {
+      "id": 117,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 118,
+      "category": "Transport"
+    },
+    {
+      "id": 119,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 120,
+      "category": "Shopping"
+    },
+    {
+      "id": 121,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 122,
+      "category": "Transport"
+    },
+    {
+      "id": 123,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 124,
+      "category": "Transport"
+    },
+    {
+      "id": 125,
+      "category": "Fees & Charges"
+    },
+    {
+      "id": 126,
+      "category": "Income"
+    },
+    {
+      "id": 127,
+      "category": "Utilities & Bills"
+    },
+    {
+      "id": 128,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 129,
+      "category": "Groceries"
+    },
+    {
+      "id": 130,
+      "category": "Transport"
+    },
+    {
+      "id": 131,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 132,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 133,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 134,
+      "category": "Transport"
+    },
+    {
+      "id": 135,
+      "category": "Rent & Housing"
+    },
+    {
+      "id": 136,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 137,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 138,
+      "category": "Transport"
+    },
+    {
+      "id": 139,
+      "category": "Shopping"
+    },
+    {
+      "id": 140,
+      "category": "Transport"
+    },
+    {
+      "id": 141,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 142,
+      "category": "Utilities & Bills"
+    },
+    {
+      "id": 143,
+      "category": "Transport"
+    },
+    {
+      "id": 144,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 145,
+      "category": "Subscriptions"
+    },
+    {
+      "id": 146,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 147,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 148,
+      "category": "Investments"
+    },
+    {
+      "id": 149,
+      "category": "Transport"
+    },
+    {
+      "id": 150,
+      "category": "Subscriptions"
+    },
+    {
+      "id": 151,
+      "category": "Subscriptions"
+    },
+    {
+      "id": 152,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 153,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 154,
+      "category": "Groceries"
+    },
+    {
+      "id": 155,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 156,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 157,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 158,
+      "category": "Transport"
+    },
+    {
+      "id": 159,
+      "category": "Transfers"
+    },
+    {
+      "id": 160,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 161,
+      "category": "Health & Pharmacy"
+    },
+    {
+      "id": 162,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 163,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 164,
+      "category": "Transport"
+    },
+    {
+      "id": 165,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 166,
+      "category": "Transport"
+    },
+    {
+      "id": 167,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 168,
+      "category": "Transport"
+    },
+    {
+      "id": 169,
+      "category": "Groceries"
+    },
+    {
+      "id": 170,
+      "category": "Shopping"
+    },
+    {
+      "id": 171,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 172,
+      "category": "Transport"
+    },
+    {
+      "id": 173,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 174,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 175,
+      "category": "Transfers"
+    },
+    {
+      "id": 176,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 177,
+      "category": "Transport"
+    },
+    {
+      "id": 178,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 179,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 180,
+      "category": "Transport"
+    },
+    {
+      "id": 181,
+      "category": "Shopping"
+    },
+    {
+      "id": 182,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 183,
+      "category": "Transport"
+    },
+    {
+      "id": 184,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 185,
+      "category": "Transport"
+    },
+    {
+      "id": 186,
+      "category": "Entertainment"
+    },
+    {
+      "id": 187,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 188,
+      "category": "Income"
+    },
+    {
+      "id": 189,
+      "category": "Utilities & Bills"
+    },
+    {
+      "id": 190,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 191,
+      "category": "Transport"
+    },
+    {
+      "id": 192,
+      "category": "Groceries"
+    },
+    {
+      "id": 193,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 194,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 195,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 196,
+      "category": "Transport"
+    },
+    {
+      "id": 197,
+      "category": "Rent & Housing"
+    },
+    {
+      "id": 198,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 199,
+      "category": "Transport"
+    },
+    {
+      "id": 200,
+      "category": "Shopping"
+    },
+    {
+      "id": 201,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 202,
+      "category": "Transport"
+    },
+    {
+      "id": 203,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 204,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 205,
+      "category": "Transport"
+    },
+    {
+      "id": 206,
+      "category": "Utilities & Bills"
+    },
+    {
+      "id": 207,
+      "category": "Subscriptions"
+    },
+    {
+      "id": 208,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 209,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 210,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 211,
+      "category": "Investments"
+    },
+    {
+      "id": 212,
+      "category": "Transport"
+    },
+    {
+      "id": 213,
+      "category": "Subscriptions"
+    },
+    {
+      "id": 214,
+      "category": "Subscriptions"
+    },
+    {
+      "id": 215,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 216,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 217,
+      "category": "Groceries"
+    },
+    {
+      "id": 218,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 219,
+      "category": "Transport"
+    },
+    {
+      "id": 220,
+      "category": "Shopping"
+    },
+    {
+      "id": 221,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 222,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 223,
+      "category": "Transfers"
+    },
+    {
+      "id": 224,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 225,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 226,
+      "category": "Transport"
+    },
+    {
+      "id": 227,
+      "category": "Health & Pharmacy"
+    },
+    {
+      "id": 228,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 229,
+      "category": "Transport"
+    },
+    {
+      "id": 230,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 231,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 232,
+      "category": "Transport"
+    },
+    {
+      "id": 233,
+      "category": "Groceries"
+    },
+    {
+      "id": 234,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 235,
+      "category": "Transport"
+    },
+    {
+      "id": 236,
+      "category": "Shopping"
+    },
+    {
+      "id": 237,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 238,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 239,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 240,
+      "category": "Transport"
+    },
+    {
+      "id": 241,
+      "category": "Transfers"
+    },
+    {
+      "id": 242,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 243,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 244,
+      "category": "Transport"
+    },
+    {
+      "id": 245,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 246,
+      "category": "Transport"
+    },
+    {
+      "id": 247,
+      "category": "Entertainment"
+    },
+    {
+      "id": 248,
+      "category": "Food & Dining"
+    },
+    {
+      "id": 249,
+      "category": "Transport"
+    }
+  ]
+}
