@@ -123,6 +123,55 @@ export interface BenchmarkVerdict {
   winner: "TabPFN" | "naive" | "tie";
 }
 
+/**
+ * The TabPFN stage's outcome, judged in TS (DESIGN §2/§6): either
+ * forecasts (+ the FR-9 verdict) or an explicit degradation — the
+ * report renders every branch; none is ever silently dropped.
+ * Anomalies travel with the outcome: they exist whenever the
+ * amounts job ran, including the single-month case.
+ */
+export type ForecastOutcome =
+  | {
+      kind: "ok";
+      forecast: Record<string, number>;
+      verdict: BenchmarkVerdict | null;
+      anomalies: Anomaly[];
+    }
+  | { kind: "insufficient-history"; anomalies: Anomaly[] }
+  | { kind: "unavailable"; reason: string };
+
+/** The FR-11 run-metrics block, assembled by the CLI (DESIGN §7). */
+export interface RunMetrics {
+  rowsParsed: number;
+  rowsExcluded: number;
+  stageSeconds: {
+    parse: number;
+    rulesMemory: number;
+    gemmaCategorize: number;
+    aggregate: number;
+    tabpfn: number;
+    narrative: number;
+    render: number;
+    total: number;
+  };
+  gemmaRequests: number;
+  sourceCounts: { memory: number; rule: number; gemma: number; other: number };
+  gemmaModel: string;
+  ollamaVersion: string | null;
+  tabpfnVersion: string | null;
+  tabpfnFitSeconds: Record<string, number> | null;
+  checkpoint: string | null;
+  checkpointMb: number | null;
+  pythonEnvMb: number | null;
+  hostLine: string;
+  narrativeSource: "gemma" | "template";
+  narrativeAttempts: number;
+  narrativeInventedFigures: number[];
+  /** Set only on --ground-truth runs. */
+  accuracyPct: number | null;
+  verdict: BenchmarkVerdict | null;
+}
+
 /** Fatal, user-facing parse failure — plain message, no artifacts (SPEC). */
 export class ParseError extends Error {
   constructor(message: string) {
