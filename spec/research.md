@@ -100,3 +100,23 @@ DESIGN remains the authority; these are implementation reference only:
   The production categorizer must validate reply length and map
   results positionally with the DESIGN's invalid→`Other` fallback —
   batching needs engineering, not trust.
+
+## S5 — Rules + correction memory coverage (Oct 20)
+
+Measured over the S3 fixture (249 transactions, empty memory file):
+
+| Measure | Result |
+|---|---|
+| Rows categorized by rules+memory (no Gemma) | **249 / 249 — coverage 100%** |
+| …of which memory / rule | 0 / 249 |
+| Leftovers passed to Gemma | 0 |
+| Rules+memory accuracy vs ground truth | **249 / 249 (100%)** |
+
+Why so high: the fixture's persona uses 28 regular narration
+templates (salary, rent, Swiggy/Zomato/Uber, BigBasket, subscriptions,
+P2P names, ATM), and the ordered rule table covers each template plus
+the precedence traps (NOTION LABS → Subscriptions not Health;
+AMAZON FRESH → Groceries; JIO RECHARGE ↛ Fees). A real statement's
+long tail of one-off merchants is exactly what Gemma (S6) exists for —
+on this fixture it is the rules, not the model, that carry the number,
+and the post will say so.

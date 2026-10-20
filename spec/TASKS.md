@@ -79,7 +79,7 @@
 
 ## Slice 2 — Day 2 (Oct 22): categorization + aggregates (categorized CSV out)
 
-- [ ] **S5 — Categories, rules, correction memory.**
+- [x] **S5 — Categories, rules, correction memory.**
   `categorize/categories.ts` (fixed list, DESIGN §4), `rules.ts`
   (ordered merchant pattern table), `memory.ts` (JSON load/save,
   merchant-key lookup), `correct "<pattern>" <Category>` CLI
