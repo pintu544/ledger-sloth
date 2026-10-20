@@ -214,3 +214,67 @@ one-batched-*request* protocol (§2) is untouched — the folds live
 inside the single worker invocation. Forecast/benchmark jobs are
 unchanged: their test rows are constructed future/held-out months,
 never training targets.
+
+## S13 — Failure-mode sweep + adversarial QA (Oct 20, real end-to-end runs)
+
+Every SPEC failure mode exercised with real CLI runs (not just the
+unit suite), on the shipping code at `6517267` unless noted:
+
+| Mode | Run | Observed | Verdict |
+|---|---|---|---|
+| (a) TabPFN unavailable | `HOME=/tmp/s13/fakehome` (no token, no cache) | exit 0, report produced; forecast section = "Forecast unavailable because TABPFN_TOKEN is not set…", anomaly section the matching explicit note; no table, no verdict, no invented numbers | ✅ |
+| (b) Single-month input | Sep-2026-only extract (63 rows) | forecast section = "No forecast: this statement covers a single month, and at least two months of history are needed… Nothing is extrapolated from one month."; anomalies still ran; **CROMA flagged** (~22× the ~₹1,513 expected); amounts job only | ✅ |
+| (c) Ollama down | network namespace, loopback up, no server | exit 1, message carries the exact fix (`ollama serve`), no stack trace, **out dir never created — zero partial artifacts** | ✅ |
+| (d) Garbage CSV | prose file / empty file / unknown headers | all exit 1 with plain messages; unknown-columns variant lists the headers found + the readable shapes; no artifacts in any variant | ✅ |
+| (e) Fully offline | network namespace with **no egress route at all** (curl to example.com fails), Ollama serving inside the namespace | full run completes exit 0; FR-9 verdict identical (TabPFN MAE ₹2,806.45 vs naive ₹2,558.75); accuracy 100% | ✅ |
+
+**Reproducibility (real runs):** `categorized.csv` is byte-identical
+across three full runs — online, offline (namespace), and post-fix.
+
+**Adversarial inspection of the happy-path outputs** (`report.md` /
+`report.html` / `categorized.csv` from a fresh demo run): anomaly
+section shows exactly the one CROMA flag with its reason (₹32,999,
+~17× the ~₹1,939 expected); FR-9 verdict printed plainly — **naive
+won: TabPFN MAE ₹2,806.45 vs naive ₹2,558.75**; Shopping forecast
+**₹82,866.32** shown raw with the anomaly-context note beneath the
+forecast table; FR-11 metrics block complete (249 rows / 2 excluded,
+per-stage seconds with per-job fits, sources 0/249/0/0, gemma3:4b via
+Ollama 0.40.6, tabpfn 9.2.0, checkpoint 835.4 MiB, Python env
+1328.6 MiB, host 2 vCPU · 7.7 GB); `categorized.csv` = 249 rows +
+header; `report.html` contains **zero external references**.
+
+**Narrative caveat — verdict: the sentence was WRONG.** The live
+narrative wrote "a significant increase of ₹52,740" for Shopping:
+₹52,740 is Shopping's *whole-period* (4-month) total; September's
+actual month-over-month change was **+₹30,148** (to ₹36,147). A
+month-in-review reader takes away a false increase. Value-only
+grounding passed it because the figure exists in the payload — in
+the wrong scope. A second instance of the same class: the
+single-month run wrote a correct total with mangled digit grouping
+("₹11,1622").
+
+**Fix (commit `18553ee`):** grounding is now three checks, not one —
+a figure must (1) exist in the payload, (2) be written in
+well-formed digit grouping (Indian or international), and (3) be
+used in its proper scope: whole-period-only figures
+(`wholePeriodByCategory`, `topMerchants`) may appear only with
+whole-period framing (`findMisScopedFigures`). The system prompt
+states the scope + grouping rules up front; failures feed the same
+sterner-retry → templated-fallback path. 4 new tests (suite now
+**149**, tsc clean).
+
+**Post-fix verification run:** both Gemma drafts failed the stricter
+checks on genuinely bad figures — an invented ₹52,747, per-category
+benchmark errors (₹140, ₹131) the model derived itself (the payload
+carries only the MAEs, so citing them is ungrounded by design), a
+period total used unframed (₹40,000), a ×10 slip (₹11,20,000), and
+malformed groupings of real values — and the report substituted the
+deterministic template, disclosing the substitution in the report
+body and metrics, exactly per DESIGN §7. Probes against the real
+payload confirm no false positives: correctly written, correctly
+scoped citations of ₹30,148 and ₹1,11,622 pass all three checks.
+Trade-off, stated plainly: stricter grounding raises the
+template-fallback rate and a failed attempt costs a second
+generation (this run's narrative stage: 375 s). The template is
+accurately scoped by construction, so the report is never wrong —
+at worst it is plainer.
