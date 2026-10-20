@@ -322,7 +322,7 @@ Each of these was exercised end-to-end, not just unit-tested:
 ## Try it
 
 ```bash
-git clone [[SLOT: repo URL — added at publish]] ledger-sloth
+git clone https://github.com/pintu544/ledger-sloth.git
 cd ledger-sloth
 npm install
 
@@ -361,4 +361,4 @@ that's the whole idea. 🦥
 - [x] No forecast claim beyond what the fixture benchmark showed.
 - [x] Privacy claim worded structurally ("no network after setup"),
       not as a promise about other people's servers — there are none.
-- [ ] Repo URL slotted into "Try it" at publish time (Oct 24).
+- [x] Repo URL slotted into "Try it" (https://github.com/pintu544/ledger-sloth, Oct 20).
