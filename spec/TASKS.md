@@ -34,7 +34,7 @@
   download is still pending 🔑.
   *Unblocks:* S9, S10.
 
-- [ ] **S2 — Ollama spike: install, pull, tokens/sec benchmark.**
+- [x] **S2 — Ollama spike: install, pull, tokens/sec benchmark.**
   Install Ollama on the VM (no systemd — run `ollama serve` as a
   background process; document the exact command), `ollama pull
   gemma3:4b`, then benchmark on the real VM: one categorization-style

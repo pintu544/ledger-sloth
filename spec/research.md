@@ -65,11 +65,38 @@ DESIGN remains the authority; these are implementation reference only:
   `/usr/local` — the installed binary (and `zstd`) vanished; the home
   volume (venv, checkpoints, fixtures) survived. Reinstall therefore
   targets **`$HOME`** (`~/ollama-dist`), never `/usr/local`.
-- Pull saga: first `ollama pull` failed with a TLS error; routing the
-  serve process through the local egress forwarder (127.0.0.1:8888)
-  made its registry connection hang instead (established TCP, no data;
-  meanwhile curl and Python urllib both reached
-  `registry.ollama.ai` fine through both proxies). Root cause not
-  fully pinned; the retry plan is a fresh `$HOME` install with the
-  plain system proxy. Benchmark numbers (tokens/sec, load time,
-  `keep_alive: 0` unload, peak RSS) land here when the pull completes.
+- Pull saga (root cause found): Ollama's **Go HTTP client cannot
+  traverse this VM's egress proxy** — the registry manifest request
+  either failed TLS ("first record does not look like a TLS
+  handshake") or hung with an established-but-dead tunnel, through
+  both the system proxy and the local forwarder, while **curl and
+  Python reached `registry.ollama.ai` in ~1 s through both**. Same
+  client class as the Rust/Chromium proxy failures in TOOLS.md.
+  **Fix used:** fetched the manifest + all 6 blobs with curl into
+  Ollama's on-disk layout (`~/.ollama/models/blobs/sha256-…` +
+  `manifests/registry.ollama.ai/library/gemma3/4b`), each blob
+  **sha256-verified against the manifest** — the installed model is
+  byte-identical to `ollama pull gemma3:4b` (3.4 GB: 2.50 GB model +
+  0.85 GB projector + template/license/params/config). Only the
+  transport differs. On any machine where `ollama pull` works, prefer
+  it; the SPEC's user-facing fix commands are unchanged.
+- **Benchmark (Oct 20, this VM, gemma3:4b via Ollama 0.40.6):**
+
+  | Measure | Result |
+  |---|---|
+  | Model load (first call) | 36.6 s |
+  | Categorization batch (24 narrations, temp 0) | wall 76.6 s incl. load; prompt eval 420 tok in 18.2 s; eval 144 tok at **6.64 tok/s** |
+  | Narrative generation | 267 tok at **6.57 tok/s**, wall 57.6 s |
+  | Peak RSS (model resident) | **3,773 MB** |
+  | Unload (`keep_alive: 0`) | `/api/ps` empty afterwards; server RSS falls to 34 MB ✅ |
+
+  Kill-criterion check: narrative-length generation is 58 s vs the
+  ~5 min ceiling — **no kill, S2 complete.** Combined with S1:
+  sequential peaks are Gemma 3.8 GB / TabPFN 3.9 GB — never together
+  (§2's spawn-per-run + `keep_alive: 0` discipline is what makes the
+  7.7 GB box work).
+  ⚠️ **S6 warning from Bench 1:** the ad-hoc batch response's array
+  did not perfectly track input order (drift visible after index ~5).
+  The production categorizer must validate reply length and map
+  results positionally with the DESIGN's invalid→`Other` fallback —
+  batching needs engineering, not trust.
