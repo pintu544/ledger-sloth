@@ -1,0 +1,6 @@
+# Ledger Sloth Python sidecar deps (DESIGN §4).
+# Install order matters (SPEC install-footprint NFR): install CPU-only
+# torch FIRST so pip never pulls the multi-GB CUDA build:
+#   pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r requirements.txt
+tabpfn==9.2.0

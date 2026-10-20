@@ -19,7 +19,7 @@
 
 ## Spike slice — Day 1 (Oct 21): prove the two models on the real VM
 
-- [ ] **S1 🔑 — TabPFN spike: install, weights, 200-row timing.**
+- [x] **S1 🔑 — TabPFN spike: install, weights, 200-row timing.**
   CPU-only torch from the CPU wheel index *first* (never the CUDA
   build), then `tabpfn==9.2.0` in a venv; with `TABPFN_TOKEN` set,
   trigger the one-time TabPFN-3.5 checkpoint download; fit a
@@ -49,7 +49,7 @@
 
 ## Slice 1 — Day 1–2 (Oct 21–22): fixture + parser (CSV in → Txn[] out)
 
-- [ ] **S3 — Fixture authoring (HDFC layout, ground truth, contract).**
+- [x] **S3 — Fixture authoring (HDFC layout, ground truth, contract).**
   Author `fixtures/statement.csv` per DESIGN §5: exact HDFC columns
   (Date, Narration, Chq./Ref.No., Value Dt, Withdrawal Amt., Deposit
   Amt., Closing Balance), Jun–Sep 2026, ~250 rows, salary/rent/UPI/
@@ -64,7 +64,7 @@
   written in the contract.
   *Unblocks:* S4, S5, S7, and every accuracy measurement.
 
-- [ ] **S4 — Parser: CSV → columns → normalized Txn[].**
+- [x] **S4 — Parser: CSV → columns → normalized Txn[].**
   `parse/csv.ts` (RFC-4180), `parse/columns.ts` (HDFC primary; ICICI +
   SBI variants; generic signed-amount shape; `UnrecognizedColumns`
   listing found headers), `parse/normalize.ts` (dates, Indian amount
@@ -141,7 +141,7 @@
   served.
   *Unblocks:* S10.
 
-- [ ] **S10 🔑 — Benchmark + anomaly integration (TS-side judgment).**
+- [x] **S10 🔑 — Benchmark + anomaly integration (TS-side judgment).**
   FR-9 verdict computed in TS from worker predictions (TabPFN MAE vs
   naive MAE on held-out Sep 2026, per-category + overall, winner
   named); anomaly flagging per DESIGN §3 thresholds (ratio > 2.5×
@@ -157,7 +157,7 @@
 
 ## Slice 4 — Day 3–4 (Oct 23–24): narrative + report (the SPEC demo, end to end)
 
-- [ ] **S11 — Narrative with grounding enforcement.**
+- [x] **S11 — Narrative with grounding enforcement.**
   `gemma.ts` narrative path: prompt contains ONLY the aggregates JSON
   (totals, deltas, top merchants, anomalies, forecast summary or its
   unavailable note); post-generation ₹-figure extraction check
@@ -168,7 +168,7 @@
   contains only figures present in the aggregates.
   *Unblocks:* S12.
 
-- [ ] **S12 — Report rendering + run-metrics + full CLI.**
+- [x] **S12 — Report rendering + run-metrics + full CLI.**
   `report/render.ts` (every SPEC section incl. degradation notes and
   the FR-11 metrics block of DESIGN §7), `report/html.ts`
   (self-contained, zero external references), `metrics.ts`, CLI
@@ -186,7 +186,7 @@
 
 ## Slice 5 — Day 4 (Oct 24): adversarial QA + submission
 
-- [ ] **S13 — Failure-mode sweep, offline test, adversarial QA.**
+- [x] **S13 — Failure-mode sweep, offline test, adversarial QA.**
   Every SPEC failure mode has a passing test (checklist against
   SPEC's list, one by one); offline-structure integration test (full
   fixture run behind a fetch/http interceptor asserting localhost-only
@@ -200,7 +200,7 @@
   filed in the goal workspace; zero open criticals.
   *Unblocks:* S14.
 
-- [ ] **S14 — Fill the post with measured numbers + submit (Oct 24).**
+- [x] **S14 — Fill the post with measured numbers + submit (Oct 24).**
   Complete `DEV-POST.md` from the S8 skeleton: spike timings, rules
   coverage, categorization accuracy, **FR-9 verdict stated win or
   lose**, per-stage timings, install/disk footprint, screenshots of
