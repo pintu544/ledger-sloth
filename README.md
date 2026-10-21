@@ -1,5 +1,7 @@
 # Hacktoberfest Week 3 — DEV × MLH Open-Source AI Challenge
 
+[![CI](https://github.com/pintu544/ledger-sloth/actions/workflows/ci.yml/badge.svg)](https://github.com/pintu544/ledger-sloth/actions/workflows/ci.yml)
+
 - **Window:** Oct 19–25, 2026 · submissions due Oct 25, 2026 23:59 UTC (≈5:29 AM IST Oct 26)
 - **Challenge page:** https://dev.to/challenges/hacktoberfest-week3-2026-10-19
 - **DEV account:** pintu_kumar_7850bd0665818 (registered Oct 17)
