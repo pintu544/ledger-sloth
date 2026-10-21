@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseStatement } from "../src/parse/normalize.js";
@@ -338,7 +338,10 @@ const SPEND_CATEGORIES = [
   ...new Set(fixtureAggs.monthlyTotals.filter((t) => t.category !== "Income").map((t) => t.category)),
 ].sort();
 
-describe("worker round-trip on the fixture (real TabPFN)", () => {
+// Real-TabPFN round-trip needs the local Python worker venv (python/.venv);
+// it runs where that venv exists and skips cleanly in fresh clones / CI.
+const tabpfnVenvPresent = existsSync(join(process.cwd(), "python", ".venv", "bin", "python"));
+describe.skipIf(!tabpfnVenvPresent)("worker round-trip on the fixture (real TabPFN)", () => {
   it(
     "forecasts every spend category with history; zero-history absent; amounts cover all debits",
     { timeout: 900_000 },
